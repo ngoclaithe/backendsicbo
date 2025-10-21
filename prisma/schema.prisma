@@ -1,0 +1,98 @@
+﻿generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum BetType {
+  TAI
+  XIU
+}
+
+enum GameStatus {
+  WAITING
+  BETTING
+  ROLLING
+  FINISHED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  username  String   @unique
+  password  String
+  role      Role     @default(USER)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  wallet Wallet?
+  bets   Bet[]
+  transactions Transaction[]
+}
+
+model Wallet {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  balance   Decimal  @default(10000) @db.Decimal(15, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Game {
+  id          String     @id @default(uuid())
+  roundNumber Int        @unique @default(autoincrement())
+  status      GameStatus @default(WAITING)
+  dice1       Int?
+  dice2       Int?
+  dice3       Int?
+  total       Int?
+  result      BetType?
+  startTime   DateTime?
+  endTime     DateTime?
+  isManual    Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  bets Bet[]
+}
+
+model Bet {
+  id        String   @id @default(uuid())
+  userId    String
+  gameId    String
+  betType   BetType
+  amount    Decimal  @db.Decimal(15, 2)
+  payout    Decimal? @db.Decimal(15, 2)
+  isWin     Boolean?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([gameId])
+}
+
+model Transaction {
+  id          String   @id @default(uuid())
+  userId      String
+  amount      Decimal  @db.Decimal(15, 2)
+  type        String   // ADMIN_ADD, ADMIN_DEDUCT, BET, WIN
+  description String?
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
