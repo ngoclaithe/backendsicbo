@@ -20,8 +20,9 @@ export class PaymentController {
 
   // ========== PUBLIC INFO (User) ==========
   @Get('infos')
-  getAllPaymentInfos() {
-    return this.paymentService.getAllPaymentInfos();
+  getAllPaymentInfos(@Request() req) {
+    const isAdmin = req.user && req.user.role === UserRole.ADMIN;
+    return this.paymentService.getAllPaymentInfos(isAdmin);
   }
 
   // ========== DEPOSIT (User) ==========
@@ -79,6 +80,20 @@ export class PaymentController {
     @Body() body: { bankName?: string; accountNumber?: string; accountHolder?: string; isActive?: boolean },
   ) {
     return this.paymentService.updateInfoPayment(id, body.bankName, body.accountNumber, body.accountHolder, body.isActive);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Put('info/:id/activate')
+  activatePaymentInfo(@Param('id') id: string) {
+    return this.paymentService.activateInfoPayment(id);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Put('info/:id/deactivate')
+  deactivatePaymentInfo(@Param('id') id: string) {
+    return this.paymentService.deactivateInfoPayment(id);
   }
 
   @UseGuards(RolesGuard)

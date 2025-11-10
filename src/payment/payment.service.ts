@@ -39,7 +39,11 @@ export class PaymentService {
     return this.infoPaymentRepository.save(infoPayment);
   }
 
-  async getAllPaymentInfos() {
+  async getAllPaymentInfos(isAdmin = false) {
+    if (isAdmin) {
+      return this.infoPaymentRepository.find();
+    }
+
     return this.infoPaymentRepository.find({ where: { isActive: true } });
   }
 
@@ -54,6 +58,36 @@ export class PaymentService {
     if (accountHolder) infoPayment.accountHolder = accountHolder;
     if (isActive !== undefined) infoPayment.isActive = isActive;
 
+    return this.infoPaymentRepository.save(infoPayment);
+  }
+
+  // Activate a payment info (admin)
+  async activateInfoPayment(id: string) {
+    const infoPayment = await this.infoPaymentRepository.findOne({ where: { id } });
+    if (!infoPayment) {
+      throw new NotFoundException('Payment info not found');
+    }
+
+    if (infoPayment.isActive) {
+      return infoPayment; // already active
+    }
+
+    infoPayment.isActive = true;
+    return this.infoPaymentRepository.save(infoPayment);
+  }
+
+  // Deactivate a payment info (admin)
+  async deactivateInfoPayment(id: string) {
+    const infoPayment = await this.infoPaymentRepository.findOne({ where: { id } });
+    if (!infoPayment) {
+      throw new NotFoundException('Payment info not found');
+    }
+
+    if (!infoPayment.isActive) {
+      return infoPayment; // already inactive
+    }
+
+    infoPayment.isActive = false;
     return this.infoPaymentRepository.save(infoPayment);
   }
 
