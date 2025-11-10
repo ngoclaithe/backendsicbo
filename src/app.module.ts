@@ -8,6 +8,7 @@ import { GameModule } from './game/game.module';
 import { AdminModule } from './admin/admin.module';
 import { HistoryModule } from './history/history.module';
 import { ChatModule} from './chat/chat.module';
+import { PaymentModule } from './payment/payment.module';
 
 @Module({
   imports: [
@@ -37,7 +38,8 @@ import { ChatModule} from './chat/chat.module';
     GameModule,
     AdminModule,
     HistoryModule,
-    ChatModule
+    ChatModule,
+    PaymentModule,
   ],
 })
 export class AppModule {}

@@ -8,7 +8,7 @@ import { TransactionType } from '../wallet/entities/transaction.entity';
 import { User } from '../users/entities/user.entity';
 
 interface BetInfo {
-  bet: 'tai' | 'xiu';
+  bet: 'tai' | 'xiu' | 'chan' | 'le';
   amount: number;
 }
 
@@ -21,12 +21,21 @@ interface BettingStats {
     count: number;
     totalAmount: number;
   };
+  chan: {
+    count: number;
+    totalAmount: number;
+  };
+  le: {
+    count: number;
+    totalAmount: number;
+  };
 }
 
 @Injectable()
 export class GameService {
   private currentSession: GameSession;
-  private sessionBets: Map<string, BetInfo> = new Map();
+  // Key: userId -> value: array of bet entries the user placed in this session
+  private sessionBets: Map<string, BetInfo[]> = new Map();
   private adminDiceResults: [number, number, number] | null = null;
 
   constructor(
@@ -59,17 +68,36 @@ export class GameService {
     return this.currentSession;
   }
 
-  async placeBet(userId: string, bet: 'tai' | 'xiu', amount: number) {
+  async placeBet(userId: string, bet: 'tai' | 'xiu' | 'chan' | 'le', amount: number) {
     const session = await this.getCurrentSession();
 
     if (session.status !== GameStatus.BETTING) {
       throw new BadRequestException('Betting is closed for this session');
     }
 
-    if (this.sessionBets.has(userId)) {
-      throw new BadRequestException('You have already placed a bet for this session');
+    // Get or create bet list for this user
+    const userBets = this.sessionBets.get(userId) || [];
+
+    // Disallow opposite bets in same category
+    const hasOpposite = userBets.some((b) =>
+      (bet === 'tai' && b.bet === 'xiu') ||
+      (bet === 'xiu' && b.bet === 'tai') ||
+      (bet === 'chan' && b.bet === 'le') ||
+      (bet === 'le' && b.bet === 'chan')
+    );
+
+    if (hasOpposite) {
+      throw new BadRequestException('Cannot bet on opposite options in the same session');
     }
 
+    // Lấy số dư ví hiện tại
+    const wallet = await this.walletService.getWallet(userId);
+    console.log(`DEBUG BET: userId=${userId}, walletBalance=${wallet.balance}, amount=${amount}`);
+    if (amount > Number(wallet.balance)) {
+      throw new BadRequestException('Không đủ số dư');
+    }
+
+    // Trừ tiền
     await this.walletService.updateBalance(
       userId,
       amount,
@@ -77,7 +105,9 @@ export class GameService {
       `Bet ${bet.toUpperCase()} - Session ${session.id}`,
     );
 
-    this.sessionBets.set(userId, { bet, amount });
+    // Lưu lệnh cược mới
+    userBets.push({ bet, amount });
+    this.sessionBets.set(userId, userBets);
 
     return {
       message: 'Bet placed successfully',
@@ -87,27 +117,54 @@ export class GameService {
     };
   }
 
-  // Lấy thống kê cược hiện tại
   getBettingStats(): BettingStats {
     const stats: BettingStats = {
       tai: { count: 0, totalAmount: 0 },
       xiu: { count: 0, totalAmount: 0 },
+      chan: { count: 0, totalAmount: 0 },
+      le: { count: 0, totalAmount: 0 },
     };
 
-    this.sessionBets.forEach((betInfo) => {
-      if (betInfo.bet === 'tai') {
-        stats.tai.count++;
-        stats.tai.totalAmount += betInfo.amount;
-      } else {
-        stats.xiu.count++;
-        stats.xiu.totalAmount += betInfo.amount;
+    // For each user, sum amounts for each bet type and count the user once per type
+    this.sessionBets.forEach((betsArray) => {
+      // Track whether this user has been counted for a type
+      let countedTai = false;
+      let countedXiu = false;
+      let countedChan = false;
+      let countedLe = false;
+
+      for (const betInfo of betsArray) {
+        if (betInfo.bet === 'tai') {
+          stats.tai.totalAmount += betInfo.amount;
+          if (!countedTai) {
+            stats.tai.count++;
+            countedTai = true;
+          }
+        } else if (betInfo.bet === 'xiu') {
+          stats.xiu.totalAmount += betInfo.amount;
+          if (!countedXiu) {
+            stats.xiu.count++;
+            countedXiu = true;
+          }
+        } else if (betInfo.bet === 'chan') {
+          stats.chan.totalAmount += betInfo.amount;
+          if (!countedChan) {
+            stats.chan.count++;
+            countedChan = true;
+          }
+        } else {
+          stats.le.totalAmount += betInfo.amount;
+          if (!countedLe) {
+            stats.le.count++;
+            countedLe = true;
+          }
+        }
       }
     });
 
     return stats;
   }
 
-  // Admin set kết quả trước
   setAdminResult(diceResults: [number, number, number]) {
     this.adminDiceResults = diceResults;
     return {
@@ -128,12 +185,10 @@ export class GameService {
 
     let dice1: number, dice2: number, dice3: number;
 
-    // Kiểm tra xem admin có set kết quả trước không
     if (this.adminDiceResults) {
       [dice1, dice2, dice3] = this.adminDiceResults;
-      this.adminDiceResults = null; // Reset sau khi sử dụng
+      this.adminDiceResults = null;
     } else {
-      // Random như bình thường
       dice1 = Math.floor(Math.random() * 6) + 1;
       dice2 = Math.floor(Math.random() * 6) + 1;
       dice3 = Math.floor(Math.random() * 6) + 1;
@@ -142,6 +197,7 @@ export class GameService {
     session.diceResults = [dice1, dice2, dice3];
     session.totalPoints = dice1 + dice2 + dice3;
     session.result = session.totalPoints >= 11 ? 'tai' : 'xiu';
+    session.evenOddResult = session.totalPoints % 2 === 0 ? 'chan' : 'le';
     session.status = GameStatus.COMPLETED;
     session.completedAt = new Date();
 
@@ -152,34 +208,39 @@ export class GameService {
   }
 
   private async processResults(session: GameSession) {
-    for (const [userId, betData] of this.sessionBets.entries()) {
-      const isWin = betData.bet === session.result;
-      const winAmount = isWin ? betData.amount * Number(session.winMultiplier) : 0;
-
-      if (isWin) {
-        await this.walletService.updateBalance(
-          userId,
-          winAmount,
-          TransactionType.WIN,
-          `Won ${session.result.toUpperCase()} - Session ${session.id}`,
-        );
-      }
-
+    for (const [userId, betsArray] of this.sessionBets.entries()) {
       const user = await this.userRepository.findOne({ where: { id: userId } });
 
-      const history = this.gameHistoryRepository.create({
-        user,
-        sessionId: session.id,
-        diceResults: session.diceResults,
-        totalPoints: session.totalPoints,
-        result: session.result,
-        userBet: betData.bet,
-        betAmount: betData.amount,
-        winAmount,
-        isWin,
-      });
+      // Process each bet separately
+      for (const betData of betsArray) {
+        const isWin = (betData.bet === session.result) || (betData.bet === session.evenOddResult);
+        const winAmount = isWin ? betData.amount * Number(session.winMultiplier) : 0;
 
-      await this.gameHistoryRepository.save(history);
+        if (isWin) {
+          const resultType = ['tai', 'xiu'].includes(betData.bet) ? session.result : session.evenOddResult;
+          await this.walletService.updateBalance(
+            userId,
+            winAmount,
+            TransactionType.WIN,
+            `Won ${resultType.toUpperCase()} - Session ${session.id}`,
+          );
+        }
+
+        const history = this.gameHistoryRepository.create({
+          user,
+          sessionId: session.id,
+          diceResults: session.diceResults,
+          totalPoints: session.totalPoints,
+          result: session.result,
+          userBet: betData.bet,
+          betAmount: betData.amount,
+          winAmount,
+          isWin,
+          evenOddResult: session.evenOddResult,
+        });
+
+        await this.gameHistoryRepository.save(history);
+      }
     }
   }
 

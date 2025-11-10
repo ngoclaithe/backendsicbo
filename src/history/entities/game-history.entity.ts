@@ -18,8 +18,11 @@ export class GameHistory {
   @Column()
   result: string; // 'tai' | 'xiu'
 
+  @Column({ nullable: true })
+  evenOddResult: string; // 'chan' | 'le'
+
   @Column()
-  userBet: string; // 'tai' | 'xiu'
+  userBet: string; // 'tai' | 'xiu' | 'chan' | 'le'
 
   @Column({ type: 'decimal', precision: 15, scale: 2 })
   betAmount: number;

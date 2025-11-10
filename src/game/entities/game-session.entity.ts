@@ -23,6 +23,9 @@ export class GameSession {
   @Column({ nullable: true })
   result: string; // 'tai' | 'xiu'
 
+  @Column({ nullable: true })
+  evenOddResult: string; // 'chan' | 'le'
+
   @Column({ type: 'int', default: 30 })
   bettingTime: number; // seconds
 
