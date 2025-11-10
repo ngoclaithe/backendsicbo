@@ -13,7 +13,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../users/entities/user.entity';
 import { AdminService } from './admin.service';
-import { UpdateGameConfigDto, AdminUpdateBalanceDto } from './dto/admin.dto';
+import { UpdateGameConfigDto, AdminUpdateBalanceDto, SetGameResultDto } from './dto/admin.dto';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -27,6 +27,11 @@ export class AdminController {
       updateGameConfigDto.bettingTime,
       updateGameConfigDto.winMultiplier,
     );
+  }
+
+  @Post('set-game-result')
+  setGameResult(@Body() dto: SetGameResultDto) {
+    return this.adminService.setGameResult(dto.diceResults);
   }
 
   @Get('users')

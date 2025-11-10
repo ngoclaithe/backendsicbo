@@ -27,6 +27,7 @@ interface BettingStats {
 export class GameService {
   private currentSession: GameSession;
   private sessionBets: Map<string, BetInfo> = new Map();
+  private adminDiceResults: [number, number, number] | null = null;
 
   constructor(
     @InjectRepository(GameSession)
@@ -106,6 +107,15 @@ export class GameService {
     return stats;
   }
 
+  // Admin set kết quả trước
+  setAdminResult(diceResults: [number, number, number]) {
+    this.adminDiceResults = diceResults;
+    return {
+      message: 'Admin result set successfully',
+      diceResults,
+    };
+  }
+
   async rollDice(): Promise<GameSession> {
     const session = await this.getCurrentSession();
 
@@ -116,9 +126,18 @@ export class GameService {
     session.status = GameStatus.ROLLING;
     await this.gameSessionRepository.save(session);
 
-    const dice1 = Math.floor(Math.random() * 6) + 1;
-    const dice2 = Math.floor(Math.random() * 6) + 1;
-    const dice3 = Math.floor(Math.random() * 6) + 1;
+    let dice1: number, dice2: number, dice3: number;
+
+    // Kiểm tra xem admin có set kết quả trước không
+    if (this.adminDiceResults) {
+      [dice1, dice2, dice3] = this.adminDiceResults;
+      this.adminDiceResults = null; // Reset sau khi sử dụng
+    } else {
+      // Random như bình thường
+      dice1 = Math.floor(Math.random() * 6) + 1;
+      dice2 = Math.floor(Math.random() * 6) + 1;
+      dice3 = Math.floor(Math.random() * 6) + 1;
+    }
 
     session.diceResults = [dice1, dice2, dice3];
     session.totalPoints = dice1 + dice2 + dice3;

@@ -7,6 +7,7 @@ import { Wallet } from '../wallet/entities/wallet.entity';
 import { GameHistory } from '../history/entities/game-history.entity';
 import { WalletService } from '../wallet/wallet.service';
 import { TransactionType } from '../wallet/entities/transaction.entity';
+import { GameService } from '../game/game.service';
 
 @Injectable()
 export class AdminService {
@@ -20,7 +21,13 @@ export class AdminService {
     @InjectRepository(GameHistory)
     private gameHistoryRepository: Repository<GameHistory>,
     private walletService: WalletService,
+    private gameService: GameService,
   ) {}
+
+  // Method mới để set kết quả game
+  setGameResult(diceResults: [number, number, number]) {
+    return this.gameService.setAdminResult(diceResults);
+  }
 
   async updateGameConfig(bettingTime?: number, winMultiplier?: number) {
     const latestSession = await this.gameSessionRepository.findOne({

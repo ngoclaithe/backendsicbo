@@ -1,4 +1,4 @@
-import { IsNumber, IsPositive, Min, Max } from 'class-validator';
+import { IsNumber, IsPositive, Min, Max, IsArray, ArrayMinSize, ArrayMaxSize, IsInt } from 'class-validator';
 
 export class UpdateGameConfigDto {
   @IsNumber()
@@ -16,4 +16,14 @@ export class UpdateGameConfigDto {
 export class AdminUpdateBalanceDto {
   @IsNumber()
   amount: number;
+}
+
+export class SetGameResultDto {
+  @IsArray()
+  @ArrayMinSize(3)
+  @ArrayMaxSize(3)
+  @IsInt({ each: true })
+  @Min(1, { each: true })
+  @Max(6, { each: true })
+  diceResults: [number, number, number];
 }

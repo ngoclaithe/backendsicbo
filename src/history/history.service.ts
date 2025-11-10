@@ -70,7 +70,7 @@ export class HistoryService {
   // 1. Lịch sử 50 phiên gần nhất của từng xúc xắc
   async getDiceHistory(limit = 50) {
     const sessions = await this.gameSessionRepository.find({
-      where: { status: GameStatus.COMPLETED },  // <-- Sử dụng enum đã import
+      where: { status: GameStatus.COMPLETED }, 
       order: { createdAt: 'DESC' },
       take: limit,
     });
@@ -99,7 +99,7 @@ export class HistoryService {
   // 2. Lịch sử tổng 100 phiên gần nhất (tổng điểm + tài/xỉu)
   async getSessionHistory(limit = 100) {
     const sessions = await this.gameSessionRepository.find({
-      where: { status: GameStatus.COMPLETED },  // <-- Sử dụng enum đã import
+      where: { status: GameStatus.COMPLETED }, 
       order: { createdAt: 'DESC' },
       take: limit,
     });
@@ -143,17 +143,16 @@ export class HistoryService {
         .addSelect('user.username', 'username')
         .addSelect('COUNT(*)', 'totalGames')
         .addSelect('SUM(CASE WHEN history.isWin THEN 1 ELSE 0 END)', 'wins')
-        .addSelect('SUM(history.winAmount - history.betAmount)', 'netProfit')  // Lowercase netProfit
+        .addSelect('SUM(history.winAmount - history.betAmount)', 'netProfit')  
         .addSelect('MAX(history.winAmount - history.betAmount)', 'biggestWin')
         .where('history.createdAt >= :startOfDay', { startOfDay })
         .andWhere('history.createdAt <= :endOfDay', { endOfDay })
         .groupBy('user.id')
         .addGroupBy('user.username')
-        .orderBy('"netProfit"', 'DESC')  // <-- ĐÃ SỬA: Wrap trong double quotes
+        .orderBy('"netProfit"', 'DESC') 
         .limit(limit)
         .getRawMany();
 
-      // Trả về mảng rỗng nếu không có dữ liệu
       if (!topWinners || topWinners.length === 0) {
         return [];
       }
@@ -171,7 +170,6 @@ export class HistoryService {
       }));
     } catch (error) {
       console.error('❌ [Top Winners] Error:', error);
-      // Trả về mảng rỗng thay vì throw error
       return [];
     }
   }
