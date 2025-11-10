@@ -17,7 +17,10 @@ interface ChatMessage {
   timestamp: Date;
 }
 
-@WebSocketGateway({ cors: true })
+@WebSocketGateway({ 
+  namespace: 'chat',
+  cors: true 
+})
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
@@ -61,7 +64,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       this.messages.push(chatMessage);
 
-      // Xóa tin nhắn cũ nhất nếu vượt quá 100 tin
       if (this.messages.length > this.MAX_MESSAGES) {
         this.messages.shift();
       }

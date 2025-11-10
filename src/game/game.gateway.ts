@@ -10,7 +10,10 @@ import {
 import { Server, Socket } from 'socket.io';
 import { GameService } from './game.service';
 
-@WebSocketGateway({ cors: true })
+@WebSocketGateway({ 
+  namespace: 'game',
+  cors: true 
+})
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
@@ -24,11 +27,11 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   handleConnection(client: Socket) {
-    console.log(`✅ Client connected: ${client.id}`);
+    console.log(`✅ Game client connected: ${client.id}`);
   }
 
   handleDisconnect(client: Socket) {
-    console.log(`❌ Client disconnected: ${client.id}`);
+    console.log(`❌ Game client disconnected: ${client.id}`);
   }
 
   @SubscribeMessage('placeBet')
@@ -40,7 +43,6 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const result = await this.gameService.placeBet(data.userId, data.bet as 'tai' | 'xiu', data.amount);
       client.emit('betPlaced', result);
       
-      // Broadcast thống kê cược mới
       const stats = this.gameService.getBettingStats();
       this.server.emit('bettingStats', stats);
     } catch (error) {
@@ -76,7 +78,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.server.emit('countdown', { 
           remainingTime: this.remainingTime,
           phase: 'betting',
-          bettingStats: stats,  // Gửi kèm thống kê
+          bettingStats: stats,  
         });
 
         if (this.remainingTime <= 0) {
