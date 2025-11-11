@@ -34,7 +34,6 @@ interface BettingStats {
 @Injectable()
 export class GameService {
   private currentSession: GameSession;
-  // Key: userId -> value: array of bet entries the user placed in this session
   private sessionBets: Map<string, BetInfo[]> = new Map();
   private adminDiceResults: [number, number, number] | null = null;
 
@@ -75,10 +74,8 @@ export class GameService {
       throw new BadRequestException('Betting is closed for this session');
     }
 
-    // Get or create bet list for this user
     const userBets = this.sessionBets.get(userId) || [];
 
-    // Disallow opposite bets in same category
     const hasOpposite = userBets.some((b) =>
       (bet === 'tai' && b.bet === 'xiu') ||
       (bet === 'xiu' && b.bet === 'tai') ||
@@ -90,14 +87,12 @@ export class GameService {
       throw new BadRequestException('Cannot bet on opposite options in the same session');
     }
 
-    // Lấy số dư ví hiện tại
     const wallet = await this.walletService.getWallet(userId);
     console.log(`DEBUG BET: userId=${userId}, walletBalance=${wallet.balance}, amount=${amount}`);
     if (amount > Number(wallet.balance)) {
       throw new BadRequestException('Không đủ số dư');
     }
 
-    // Trừ tiền
     await this.walletService.updateBalance(
       userId,
       amount,
@@ -105,7 +100,6 @@ export class GameService {
       `Bet ${bet.toUpperCase()} - Session ${session.id}`,
     );
 
-    // Lưu lệnh cược mới
     userBets.push({ bet, amount });
     this.sessionBets.set(userId, userBets);
 
@@ -125,9 +119,7 @@ export class GameService {
       le: { count: 0, totalAmount: 0 },
     };
 
-    // For each user, sum amounts for each bet type and count the user once per type
     this.sessionBets.forEach((betsArray) => {
-      // Track whether this user has been counted for a type
       let countedTai = false;
       let countedXiu = false;
       let countedChan = false;
@@ -211,7 +203,6 @@ export class GameService {
     for (const [userId, betsArray] of this.sessionBets.entries()) {
       const user = await this.userRepository.findOne({ where: { id: userId } });
 
-      // Process each bet separately
       for (const betData of betsArray) {
         const isWin = (betData.bet === session.result) || (betData.bet === session.evenOddResult);
         const winAmount = isWin ? betData.amount * Number(session.winMultiplier) : 0;
