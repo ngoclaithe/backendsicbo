@@ -15,7 +15,7 @@ export class Deposit {
   id: string;
 
   @Column()
-  codepay: string; // Mã CODEPAY 6 ký tự (ví dụ: ABC123)
+  codepay: string; 
 
   @Column({ type: 'enum', enum: DepositStatus, default: DepositStatus.PENDING })
   status: DepositStatus;
@@ -27,10 +27,10 @@ export class Deposit {
   user: User;
 
   @ManyToOne(() => InfoPayment)
-  paymentInfo: InfoPayment; // Tài khoản nạp tiền đến
+  paymentInfo: InfoPayment; 
 
   @Column({ nullable: true })
-  note: string; // Ghi chú từ user (ví dụ ghi CODEPAY vào nội dung chuyển khoản)
+  note: string; 
 
   @CreateDateColumn()
   createdAt: Date;
@@ -39,5 +39,5 @@ export class Deposit {
   updatedAt: Date;
 
   @Column({ nullable: true })
-  approvedAt: Date; // Thời gian admin duyệt
+  approvedAt: Date; 
 }

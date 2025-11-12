@@ -14,7 +14,7 @@ export class Withdrawal {
   id: string;
 
   @Column()
-  codepay: string; // Mã CODEPAY 6 ký tự
+  codepay: string;
 
   @Column({ type: 'enum', enum: WithdrawalStatus, default: WithdrawalStatus.PENDING })
   status: WithdrawalStatus;
@@ -26,16 +26,16 @@ export class Withdrawal {
   user: User;
 
   @Column()
-  bankName: string; // Tên ngân hàng rút tiền đến
+  bankName: string;
 
   @Column()
-  accountNumber: string; // Số tài khoản rút tiền đến
+  accountNumber: string; 
 
   @Column()
-  accountHolder: string; // Tên chủ tài khoản
+  accountHolder: string;
 
   @Column({ nullable: true })
-  note: string; // Ghi chú
+  note: string; 
 
   @CreateDateColumn()
   createdAt: Date;
@@ -44,5 +44,5 @@ export class Withdrawal {
   updatedAt: Date;
 
   @Column({ nullable: true })
-  approvedAt: Date; // Thời gian admin duyệt
+  approvedAt: Date; 
 }

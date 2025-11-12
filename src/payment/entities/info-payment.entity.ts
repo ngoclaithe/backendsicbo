@@ -6,19 +6,19 @@ export class InfoPayment {
   id: string;
 
   @Column()
-  bankName: string; // Tên ngân hàng (VCB, ACB, ...)
+  bankName: string;
 
   @Column()
-  accountNumber: string; // Số tài khoản
+  accountNumber: string; 
 
   @Column()
-  accountHolder: string; // Tên chủ tài khoản
+  accountHolder: string; 
 
   @Column({ type: 'text', nullable: true })
-  description: string; // Mô tả/ghi chú
+  description: string;
 
   @Column({ default: true })
-  isActive: boolean; // Có hoạt động hay không
+  isActive: boolean; 
 
   @CreateDateColumn()
   createdAt: Date;

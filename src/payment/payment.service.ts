@@ -8,7 +8,6 @@ import { User } from '../users/entities/user.entity';
 import { WalletService } from '../wallet/wallet.service';
 import { TransactionType } from '../wallet/entities/transaction.entity';
 
-// Generate 6-character CODEPAY
 function generateCodepay(): string {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
@@ -69,7 +68,7 @@ export class PaymentService {
     }
 
     if (infoPayment.isActive) {
-      return infoPayment; // already active
+      return infoPayment; 
     }
 
     infoPayment.isActive = true;
@@ -84,7 +83,7 @@ export class PaymentService {
     }
 
     if (!infoPayment.isActive) {
-      return infoPayment; // already inactive
+      return infoPayment; 
     }
 
     infoPayment.isActive = false;
@@ -131,7 +130,6 @@ export class PaymentService {
       throw new BadRequestException(`Deposit is already ${deposit.status}`);
     }
 
-    // Cộng tiền vào wallet
     await this.walletService.updateBalance(
       deposit.user.id,
       deposit.amount,
@@ -177,8 +175,11 @@ export class PaymentService {
     });
   }
 
-  async getAllDeposits() {
+  async getAllDeposits(status?: DepositStatus) {
+    const whereCondition = status ? { status } : {};
+    
     return this.depositRepository.find({
+      where: whereCondition,
       relations: ['user', 'paymentInfo'],
       order: { createdAt: 'DESC' },
     });
@@ -191,7 +192,6 @@ export class PaymentService {
       throw new NotFoundException('User not found');
     }
 
-    // Kiểm tra số dư
     const wallet = await this.walletService.getWallet(userId);
     if (Number(wallet.balance) < amount) {
       throw new BadRequestException('Insufficient balance');
@@ -227,7 +227,6 @@ export class PaymentService {
       throw new BadRequestException(`Withdrawal is already ${withdrawal.status}`);
     }
 
-    // Trừ tiền từ wallet
     await this.walletService.updateBalance(
       withdrawal.user.id,
       withdrawal.amount,
@@ -272,15 +271,17 @@ export class PaymentService {
     });
   }
 
-  async getAllWithdrawals() {
+  async getAllWithdrawals(status?: WithdrawalStatus) {
+    const whereCondition = status ? { status } : {};
+    
     return this.withdrawalRepository.find({
+      where: whereCondition,
       relations: ['user'],
       order: { createdAt: 'DESC' },
     });
   }
 
   // ========== AUTO TIMEOUT LOGIC ==========
-  // Hàm check và auto-reject timeout requests
   async checkAndAutoRejectTimeouts() {
     const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
 

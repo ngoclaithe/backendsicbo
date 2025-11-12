@@ -1,9 +1,11 @@
-import { Controller, Post, Get, Put, Body, Param, UseGuards, Request, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Get, Put, Body, Param, Query, UseGuards, Request, BadRequestException } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { PaymentService } from './payment.service';
 import { UserRole } from '../users/entities/user.entity';
+import { DepositStatus } from './entities/deposit.entity';
+import { WithdrawalStatus } from './entities/withdrawal.entity';
 import {
   CreateDepositDto,
   CreateWithdrawalDto,
@@ -96,18 +98,22 @@ export class PaymentController {
     return this.paymentService.deactivateInfoPayment(id);
   }
 
+  // ========== ADMIN: GET DEPOSITS WITH FILTER ==========
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @Get('deposits')
-  getAllDeposits() {
-    return this.paymentService.getAllDeposits();
+  getAllDeposits(@Query('status') status?: string) {
+    if (status && !Object.values(DepositStatus).includes(status as DepositStatus)) {
+      throw new BadRequestException(`Invalid status. Allowed values: ${Object.values(DepositStatus).join(', ')}`);
+    }
+    
+    return this.paymentService.getAllDeposits(status as DepositStatus);
   }
 
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @Put('deposit/:id/approve')
   async approveDeposit(@Param('id') id: string) {
-    // Check timeout trước khi duyệt
     await this.paymentService.checkAndAutoRejectTimeouts();
     return this.paymentService.approveDeposit(id);
   }
@@ -119,18 +125,22 @@ export class PaymentController {
     return this.paymentService.rejectDeposit(id);
   }
 
+  // ========== ADMIN: GET WITHDRAWALS WITH FILTER ==========
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @Get('withdrawals')
-  getAllWithdrawals() {
-    return this.paymentService.getAllWithdrawals();
+  getAllWithdrawals(@Query('status') status?: string) {
+    if (status && !Object.values(WithdrawalStatus).includes(status as WithdrawalStatus)) {
+      throw new BadRequestException(`Invalid status. Allowed values: ${Object.values(WithdrawalStatus).join(', ')}`);
+    }
+    
+    return this.paymentService.getAllWithdrawals(status as WithdrawalStatus);
   }
 
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @Put('withdrawal/:id/approve')
   async approveWithdrawal(@Param('id') id: string) {
-    // Check timeout trước khi duyệt
     await this.paymentService.checkAndAutoRejectTimeouts();
     return this.paymentService.approveWithdrawal(id);
   }
