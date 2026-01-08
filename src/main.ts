@@ -1,18 +1,22 @@
 ﻿import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Add cookie parser middleware
+  app.use(cookieParser());
+
   app.setGlobalPrefix('api/v1');
-  
+
   app.enableCors({
     origin: [
-      process.env.FRONTEND_URL, 
+      process.env.FRONTEND_URL,
       'https://33dfde4daea54c11912db39ff7dc75dc-glow-world.projects.builder.my',
       'http://localhost:3000',
-    ].filter(Boolean), 
+    ].filter(Boolean),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
