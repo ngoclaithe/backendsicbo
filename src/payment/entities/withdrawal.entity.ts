@@ -16,7 +16,7 @@ export class Withdrawal {
   @Column()
   codepay: string;
 
-  @Column({ type: 'enum', enum: WithdrawalStatus, default: WithdrawalStatus.PENDING })
+  @Column({ type: 'varchar', default: WithdrawalStatus.PENDING })
   status: WithdrawalStatus;
 
   @Column({ type: 'decimal', precision: 15, scale: 2 })
@@ -29,13 +29,13 @@ export class Withdrawal {
   bankName: string;
 
   @Column()
-  accountNumber: string; 
+  accountNumber: string;
 
   @Column()
   accountHolder: string;
 
   @Column({ nullable: true })
-  note: string; 
+  note: string;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -44,5 +44,5 @@ export class Withdrawal {
   updatedAt: Date;
 
   @Column({ nullable: true })
-  approvedAt: Date; 
+  approvedAt: Date;
 }

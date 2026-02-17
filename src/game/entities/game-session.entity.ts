@@ -11,7 +11,7 @@ export class GameSession {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'enum', enum: GameStatus, default: GameStatus.BETTING })
+  @Column({ type: 'varchar', default: GameStatus.BETTING })
   status: GameStatus;
 
   @Column({ type: 'int', array: true, nullable: true })

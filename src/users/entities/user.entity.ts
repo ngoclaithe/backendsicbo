@@ -3,8 +3,8 @@ import { Wallet } from '../../wallet/entities/wallet.entity';
 import { GameHistory } from '../../history/entities/game-history.entity';
 
 export enum UserRole {
-  USER = 'USER',
-  ADMIN = 'ADMIN',
+  USER = 'user',
+  ADMIN = 'admin',
 }
 
 @Entity('users')
@@ -21,7 +21,7 @@ export class User {
   @Column()
   password: string;
 
-  @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
+  @Column({ type: 'varchar', default: UserRole.USER })
   role: UserRole;
 
   @Column({ default: true })

@@ -15,9 +15,9 @@ export class Deposit {
   id: string;
 
   @Column()
-  codepay: string; 
+  codepay: string;
 
-  @Column({ type: 'enum', enum: DepositStatus, default: DepositStatus.PENDING })
+  @Column({ type: 'varchar', default: DepositStatus.PENDING })
   status: DepositStatus;
 
   @Column({ type: 'decimal', precision: 15, scale: 2 })
@@ -27,10 +27,10 @@ export class Deposit {
   user: User;
 
   @ManyToOne(() => InfoPayment)
-  paymentInfo: InfoPayment; 
+  paymentInfo: InfoPayment;
 
   @Column({ nullable: true })
-  note: string; 
+  note: string;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -39,5 +39,5 @@ export class Deposit {
   updatedAt: Date;
 
   @Column({ nullable: true })
-  approvedAt: Date; 
+  approvedAt: Date;
 }
