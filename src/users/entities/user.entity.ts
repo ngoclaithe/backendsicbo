@@ -12,25 +12,25 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ unique: true })
+  @Column({ name: 'username', unique: true })
   username: string;
 
-  @Column()
+  @Column({ name: 'password' })
   password: string;
 
-  @Column({ type: 'varchar', default: UserRole.USER })
+  @Column({ name: 'role', type: 'varchar' })
   role: UserRole;
 
-  @Column({ default: true })
+  @Column({ name: 'isActive', default: true })
   isActive: boolean;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'createdAt' })
   createdAt: Date;
 
-  @Column({ unique: true, nullable: true })
+  @Column({ name: 'email', unique: true, nullable: true })
   email: string;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updatedAt' })
   updatedAt: Date;
 
   @OneToOne(() => Wallet, wallet => wallet.user)
