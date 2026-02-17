@@ -7,7 +7,7 @@ import { GetUser } from '../common/decorators/get-user.decorator';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   @Post('register')
   async register(
@@ -16,12 +16,13 @@ export class AuthController {
   ) {
     const result = await this.authService.register(registerDto);
 
-    // Set HTTP-only cookie
+    // Set HTTP-only cookie for cross-domain
     res.cookie('access_token', result.access_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production', // true in production (HTTPS required)
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' for cross-domain in production
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/',
     });
 
     // Return user info only (not token)
@@ -37,12 +38,13 @@ export class AuthController {
   ) {
     const result = await this.authService.login(loginDto);
 
-    // Set HTTP-only cookie
+    // Set HTTP-only cookie for cross-domain
     res.cookie('access_token', result.access_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production', // true in production (HTTPS required)
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' for cross-domain in production
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/',
     });
 
     // Return user info only (not token)

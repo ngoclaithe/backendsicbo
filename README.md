@@ -2,18 +2,6 @@
 
 ## Setup
 
-1. Install dependencies:
-```
-npm install
-```
-
-2. Setup database:
-```
-cp .env.example .env
-# Edit .env with your database credentials
-npm run prisma:generate
-npm run prisma:migrate
-```
 
 3. Run development server:
 ```
