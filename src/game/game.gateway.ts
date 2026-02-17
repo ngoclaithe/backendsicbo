@@ -10,9 +10,12 @@ import {
 import { Server, Socket } from 'socket.io';
 import { GameService } from './game.service';
 
-@WebSocketGateway({ 
+@WebSocketGateway({
   namespace: 'game',
-  cors: true 
+  cors: {
+    origin: '*',
+    credentials: true,
+  }
 })
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
@@ -42,7 +45,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     try {
       const result = await this.gameService.placeBet(data.userId, data.bet as 'tai' | 'xiu', data.amount);
       client.emit('betPlaced', result);
-      
+
       const stats = this.gameService.getBettingStats();
       this.server.emit('bettingStats', stats);
     } catch (error) {
@@ -71,14 +74,14 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       this.countdownInterval = setInterval(() => {
         this.remainingTime--;
-        
+
         // Lấy thống kê cược hiện tại
         const stats = this.gameService.getBettingStats();
-        
-        this.server.emit('countdown', { 
+
+        this.server.emit('countdown', {
           remainingTime: this.remainingTime,
           phase: 'betting',
-          bettingStats: stats,  
+          bettingStats: stats,
         });
 
         if (this.remainingTime <= 0) {
@@ -97,7 +100,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // Lắc xúc xắc - 2 giây
     setTimeout(async () => {
       const result = await this.gameService.rollDice();
-      
+
       this.server.emit('diceRolled', {
         sessionId: result.id,
         diceResults: result.diceResults,
@@ -111,7 +114,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       const revealInterval = setInterval(() => {
         this.remainingTime--;
-        this.server.emit('countdown', { 
+        this.server.emit('countdown', {
           remainingTime: this.remainingTime,
           phase: 'revealing',
         });

@@ -17,9 +17,12 @@ interface ChatMessage {
   timestamp: Date;
 }
 
-@WebSocketGateway({ 
+@WebSocketGateway({
   namespace: 'chat',
-  cors: true 
+  cors: {
+    origin: '*',
+    credentials: true,
+  }
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
@@ -30,7 +33,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   handleConnection(client: Socket) {
     console.log(`Chat client connected: ${client.id}`);
-    
+
     client.emit('chatHistory', this.messages);
   }
 
