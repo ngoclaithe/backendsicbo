@@ -32,12 +32,18 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     console.log('🔍 [JWT Strategy] Payload:', payload);
 
     const user = await this.authService.validateUser(payload.sub);
-    console.log('🔍 [JWT Strategy] User found:', user ? `${user.id} - ${user.username}` : 'NULL');
+    console.log('🔍 [JWT Strategy] User found in DB:', user ? `${user.id} - ${user.username} - Role: ${user.role}` : 'NULL');
 
     if (!user) {
       throw new UnauthorizedException('User not found in database');
     }
 
-    return { userId: payload.sub, username: payload.username, role: payload.role };
+    // Luôn lấy Role từ Database để đảm bảo quyền hạn mới nhất, 
+    // không tin tưởng vào payload của Token cũ trong trình duyệt
+    return {
+      userId: user.id,
+      username: user.username,
+      role: user.role
+    };
   }
 }
