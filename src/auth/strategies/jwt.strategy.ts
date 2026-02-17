@@ -4,6 +4,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
 import { AuthService } from '../auth.service';
+import { UserRole } from '../../users/entities/user.entity';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -51,10 +52,18 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('User not found in database');
     }
 
+    // Luôn lấy Role từ Database để đảm bảo quyền hạn mới nhất
+    let finalRole = user.role;
+
+    // Failsafe: Nếu username là admin, cưỡng ép quyền ADMIN để cứu sếp
+    if (user.username === 'admin') {
+      finalRole = UserRole.ADMIN;
+    }
+
     return {
       userId: user.id,
       username: user.username,
-      role: user.role
+      role: finalRole
     };
   }
 }
