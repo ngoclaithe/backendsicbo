@@ -1,4 +1,4 @@
-import { PrismaClient, Role } from '@prisma/client';
+import { PrismaClient, users_role_enum as Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import * as dotenv from 'dotenv';
 
@@ -24,8 +24,7 @@ async function main() {
             data: {
                 username: adminUsername,
                 password: hashedPassword,
-                email: adminEmail,
-                role: Role.ADMIN,
+                role: Role.admin,
                 wallet: {
                     create: {
                         balance: 1000000000,
@@ -52,7 +51,7 @@ async function main() {
             data: {
                 username: userUsername,
                 password: hashedPassword,
-                role: Role.USER,
+                role: Role.user,
                 wallet: {
                     create: {
                         balance: 50000,

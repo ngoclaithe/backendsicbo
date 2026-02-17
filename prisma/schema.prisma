@@ -7,92 +7,149 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  USER
-  ADMIN
-}
-
-enum BetType {
-  TAI
-  XIU
-}
-
-enum GameStatus {
-  WAITING
-  BETTING
-  ROLLING
-  FINISHED
-}
-
 model User {
-  id        String   @id @default(uuid())
-  email     String?  @unique
-  username  String   @unique
-  password  String
-  role      Role     @default(USER)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  id           String          @id(map: "PK_a3ffb1c0c8416b9fc6f907b7433") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  username     String          @unique(map: "UQ_fe0bb3f6520ee0469504521e710") @db.VarChar
+  password     String          @db.VarChar
+  email        String?         @unique @db.VarChar
+  role         users_role_enum @default(user)
+  isActive     Boolean         @default(true)
+  createdAt    DateTime        @default(now()) @db.Timestamp(6)
+  updatedAt    DateTime        @default(now()) @db.Timestamp(6) @updatedAt
+  
+  deposits     deposits[]
+  game_history game_history[]
   wallet       Wallet?
-  bets         Bet[]
-  transactions Transaction[]
+  withdrawals  withdrawals[]
+
+  @@map("users")
 }
 
 model Wallet {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  balance   Decimal  @default(10000) @db.Decimal(15, 2)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String         @id(map: "PK_8402e5df5a30a229380e83e4f7e") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId       String?        @unique(map: "REL_2ecdb33f23e9a6fc392025c0b9") @db.Uuid
+  balance      Decimal        @default(0) @db.Decimal(15, 2)
+  createdAt    DateTime       @default(now()) @db.Timestamp(6)
+  updatedAt    DateTime       @default(now()) @db.Timestamp(6) @updatedAt
+  
+  transactions transactions[]
+  user         User?          @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_2ecdb33f23e9a6fc392025c0b97")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("wallets")
 }
 
-model Game {
-  id          String     @id @default(uuid())
-  roundNumber Int        @unique @default(autoincrement())
-  status      GameStatus @default(WAITING)
-  dice1       Int?
-  dice2       Int?
-  dice3       Int?
-  total       Int?
-  result      BetType?
-  startTime   DateTime?
-  endTime     DateTime?
-  isManual    Boolean    @default(false)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-
-  bets Bet[]
+model deposits {
+  id            String               @id(map: "PK_f49ba0cd446eaf7abb4953385d9") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  codepay       String               @db.VarChar
+  status        deposits_status_enum @default(pending)
+  amount        Decimal              @db.Decimal(15, 2)
+  note          String?              @db.VarChar
+  createdAt     DateTime             @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime             @default(now()) @db.Timestamp(6)
+  approvedAt    DateTime?            @db.Timestamp(6)
+  userId        String?              @db.Uuid
+  paymentInfoId String?              @db.Uuid
+  users         User?                @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_968bcd26d29022f95d20bb70e21")
+  info_payments info_payments?       @relation(fields: [paymentInfoId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_e52c3a368123062ed004bb2e3f4")
 }
 
-model Bet {
-  id        String   @id @default(uuid())
-  userId    String
-  gameId    String
-  betType   BetType
-  amount    Decimal  @db.Decimal(15, 2)
-  payout    Decimal? @db.Decimal(15, 2)
-  isWin     Boolean?
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([gameId])
+model game_history {
+  id            String   @id(map: "PK_0e74b90c56b815ed54e90a29f1a") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  sessionId     String   @db.VarChar
+  diceResults   Int[]
+  totalPoints   Int
+  result        String   @db.VarChar
+  evenOddResult String?  @db.VarChar
+  userBet       String   @db.VarChar
+  betAmount     Decimal  @db.Decimal(15, 2)
+  winAmount     Decimal  @default(0) @db.Decimal(15, 2)
+  isWin         Boolean
+  createdAt     DateTime @default(now()) @db.Timestamp(6)
+  userId        String?  @db.Uuid
+  users         User?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_86c4d5a6db9b581a7ecbbdba009")
 }
 
-model Transaction {
-  id          String   @id @default(uuid())
-  userId      String
-  amount      Decimal  @db.Decimal(15, 2)
-  type        String   // ADMIN_ADD, ADMIN_DEDUCT, BET, WIN
-  description String?
-  createdAt   DateTime @default(now())
+model game_sessions {
+  id            String                    @id(map: "PK_e25fa82d55744e55000c3288fdc") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  status        game_sessions_status_enum @default(betting)
+  diceResults   Int[]
+  totalPoints   Int?
+  result        String?                   @db.VarChar
+  evenOddResult String?                   @db.VarChar
+  bettingTime   Int                       @default(30)
+  winMultiplier Decimal                   @default(1.95) @db.Decimal(10, 2)
+  createdAt     DateTime                  @default(now()) @db.Timestamp(6)
+  completedAt   DateTime?                 @db.Timestamp(6)
+}
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+model info_payments {
+  id            String     @id(map: "PK_63a5fd022f2efed1289c0fd5f34") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  bankName      String     @db.VarChar
+  accountNumber String     @db.VarChar
+  accountHolder String     @db.VarChar
+  description   String?
+  isActive      Boolean    @default(true)
+  createdAt     DateTime   @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime   @default(now()) @db.Timestamp(6)
+  deposits      deposits[]
+}
 
-  @@index([userId])
+model transactions {
+  id            String                 @id(map: "PK_a219afd8dd77ed80f5a862f1db9") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  type          transactions_type_enum
+  amount        Decimal                @db.Decimal(15, 2)
+  balanceBefore Decimal                @db.Decimal(15, 2)
+  balanceAfter  Decimal                @db.Decimal(15, 2)
+  description   String?                @db.VarChar
+  createdAt     DateTime               @default(now()) @db.Timestamp(6)
+  walletId      String?                @db.Uuid
+  wallets       Wallet?                @relation(fields: [walletId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_a88f466d39796d3081cf96e1b66")
+}
+
+model withdrawals {
+  id            String                  @id(map: "PK_9871ec481baa7755f8bd8b7c7e9") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  codepay       String                  @db.VarChar
+  status        withdrawals_status_enum @default(pending)
+  amount        Decimal                 @db.Decimal(15, 2)
+  bankName      String                  @db.VarChar
+  accountNumber String                  @db.VarChar
+  accountHolder String                  @db.VarChar
+  note          String?                 @db.VarChar
+  createdAt     DateTime                @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime                @default(now()) @db.Timestamp(6)
+  approvedAt    DateTime?               @db.Timestamp(6)
+  userId        String?                 @db.Uuid
+  users         User?                   @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_79a3949e02a4652fb2b2a0ccd4e")
+}
+
+enum deposits_status_enum {
+  pending
+  success
+  failed
+  cancelled
+}
+
+enum game_sessions_status_enum {
+  betting
+  rolling
+  completed
+}
+
+enum transactions_type_enum {
+  deposit
+  withdraw
+  bet
+  win
+}
+
+enum users_role_enum {
+  user
+  admin
+}
+
+enum withdrawals_status_enum {
+  pending
+  success
+  failed
+  cancelled
 }
