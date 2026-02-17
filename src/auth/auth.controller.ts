@@ -19,9 +19,9 @@ export class AuthController {
     // Set HTTP-only cookie for cross-domain
     res.cookie('access_token', result.access_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // true in production (HTTPS required)
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' for cross-domain in production
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      secure: true,
+      sameSite: 'none',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
       path: '/',
     });
 
@@ -41,8 +41,8 @@ export class AuthController {
     // Set HTTP-only cookie for cross-domain
     res.cookie('access_token', result.access_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // true in production (HTTPS required)
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' for cross-domain in production
+      secure: true, // Always true for cross-domain cookies
+      sameSite: 'none', // Always none for cross-domain cookies
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: '/',
     });
